@@ -6,13 +6,13 @@ class Movies(models.Model):
     title = models.CharField(max_length=255, verbose_name="Заголовок")
     # slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL")
     photo = models.ImageField(upload_to="photos/%Y/%m/%d/", verbose_name="Фото")
-    tag_line = models.TextField(blank=True,verbose_name="Слоган")
+    brief_description = models.TextField(blank=True, verbose_name="Краткое описание")
     content = models.TextField(blank=True, verbose_name="Сюжет")
     time_create = models.DateTimeField(auto_now_add=True, verbose_name="Время создания")
     time_update = models.DateTimeField(auto_now=True, verbose_name="Время изменения")
     is_published = models.BooleanField(default=True, verbose_name="Публикация")
-    # cat = models.ManyToManyField('Category', verbose_name="Категория")
-    # cast = models.ManyToManyField('Actors', verbose_name="Актеры")
+    cat = models.ForeignKey('Category', on_delete=models.PROTECT, null=True, verbose_name="Категория")
+    actors = models.ManyToManyField('Actor')
 
     def __str__(self):
         return self.title
@@ -25,15 +25,16 @@ class Movies(models.Model):
         verbose_name_plural = "Фильмы"
         ordering = ['id']
 
+
 class Category(models.Model):
     title_cat = models.CharField(max_length=100, db_index=True, verbose_name="Категория")
-    slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL")
+    # slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL")
 
     def __str__(self):
-        return self.name
+        return self.title_cat
 
     def get_absolute_url(self):
-        return reverse('category', kwargs={'cat_slug': self.slug})
+        return reverse('category', kwargs={'cat_id': self.pk})
 
     class Meta:
         verbose_name="Категории"
@@ -41,7 +42,7 @@ class Category(models.Model):
         ordering = ['id']
 
 
-class Actors(models.Model):
+class Actor(models.Model):
     title = models.CharField(max_length=255, verbose_name="Имя")
     slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL")
     content = models.TextField(blank=True, verbose_name="Текст статьи")
@@ -52,7 +53,7 @@ class Actors(models.Model):
 
 
     def __str__(self):
-        return self.name
+        return self.title
 
     def get_absolute_url(self):
         return reverse('actors', kwargs={'actors_slug': self.slug})
@@ -60,7 +61,7 @@ class Actors(models.Model):
     class Meta:
         verbose_name = "Актеры и режиссеры"
         verbose_name_plural = "Актеры и режиссеры"
-        ordering = ['id']
+        ordering = ['title']
 
 
 
