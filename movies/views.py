@@ -1,3 +1,6 @@
+from django.contrib.auth import logout, login
+from django.contrib.auth.views import LoginView
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.urls import reverse_lazy
@@ -22,21 +25,17 @@ class MoviesHome(DataMixin, ListView):
     def get_queryset(self):
         return Movies.objects.filter(is_published=True)
 
-# def index(request):
-#     posts = Movies.objects.all()
-#
-#     context = {
-#         'posts': posts,
-#         'title': 'Главная страница',
-#         'cat_selected': 0,
-#     }
-#     return render(request, 'movies/index.html', context=context)
 
 def about(request):
-    return render(request, 'movies/about.html', {'menu': menu, 'title': "ABOUT"})
+    contact_list = Movies.objects.all()
+    paginator = Paginator(contact_list, 3)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'movies/about.html', {'page_obj': page_obj, 'menu': menu,'title': 'О сайте'})
 
 
-class AddPage(DataMixin, CreateView):
+class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddPostForm
     template_name = 'movies/addpage.html'
     success_url = reverse_lazy('home')
@@ -49,32 +48,10 @@ class AddPage(DataMixin, CreateView):
        return dict(list(context.items()) + list(c_def.items()))
 
 
-# def addpage(request):
-#     if request.method == 'POST':
-#         form = AddPostForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             # print(form.cleaned_data)
-#             form.save()
-#             return redirect('home')
-#     else:
-#         form = AddPostForm()
-#     return render(request, 'movies/addpage.html', {'form': form, 'title': 'Добавление статьи'})
 def contact(request):
     return HttpResponse('Обратная связь')
 
 
-def login(request):
-    return HttpResponse("Войти")
-
-# def show_post(request, post_slug):
-#     post = get_object_or_404(Movies, slug=post_slug)
-#
-#     context = {
-#         'post': post,
-#         'title': post.title,
-#         'cat_selected': post.cat_id,
-#     }
-#     return render(request, 'movies/post.html', context=context)
 class ShowPost(DataMixin, DetailView):
     model = Movies
     template_name = 'movies/post.html'
@@ -102,22 +79,41 @@ class MoviesCategory(DataMixin, ListView):
                                       cat_selected=context['posts'][0].cat_id)
         return dict(list(context.items()) + list(c_def.items()))
 
-# def show_category(request, cat_slug):
-#     posts = Movies.objects.filter(cat__slug=cat_slug)
-#
-#     if len(posts) == 0:
-#         raise Http404()
-#
-#     context = {
-#         'posts': posts,
-#         'title': 'Главная страница',
-#         'cat_selected': cat_slug,
-#
-#     }
-#     return render(request, 'movies/index.html', context=context)
 
 def pageNotFound(request, exception):
     return HttpResponseNotFound('Страница не найдена')
 
+
+class RegisterUser(DataMixin, CreateView):
+    form_class = RegisterUserForm
+    template_name = 'movies/register.html'
+    success_url = reverse_lazy('login')
+
+    def ge_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Главная страница")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        return redirect('home')
+
+
+class LoginUser(DataMixin, LoginView):
+    form_class = LoginUserForm
+    template_name = 'movies/login.html'
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Авторизация")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_success_url(self):
+        return reverse_lazy('home')
+
+def logout_user(request):
+    logout(request)
+    return redirect('login')
 
 

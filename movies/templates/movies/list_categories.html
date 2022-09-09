@@ -1,7 +1,8 @@
 {% for c in cats %}
 		{% if c.pk == cat_selected %}
-		    <li class="selected">{{c.title_cat}}</li>
+		    <li class="selected">{{c.title}}</li>
 		{% else %}
 		    <li><a href="{{ c.get_absolute_url }}">{{ c.title_cat }}</a></li>
         {% endif %}
 {% endfor %}
+
